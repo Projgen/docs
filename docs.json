@@ -1,72 +1,189 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "theme": "almond",
+  "name": "Projgen Docs",
+  "description": "Template-driven project scaffolding with Projgen.",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#7ddacf",
+    "light": "#7ddacf",
+    "dark": "#7ddacf"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/assets/logo/favicon.png",
+  "styling": {
+    "codeblocks": {
+      "theme": "material-theme-darker"
+    },
+    "eyebrows": "breadcrumbs"
+  },
   "navigation": {
-    "tabs": [
+    "products": [
       {
-        "tab": "Guides",
-        "groups": [
+        "product": "Projgen CLI",
+        "description": "The Projgen command-line interface for running templates and managing the local registry.",
+        "icon": "terminal",
+        "versions": [
           {
-            "group": "Getting started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development"
-            ]
-          },
-          {
-            "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/components",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "Agent ready",
-            "pages": [
-              "agent-ready/prompt",
-              "agent-ready/visibility",
-              "agent-ready/contextual",
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+            "version": "v3",
+            "tag": "Latest",
+            "default": true,
+            "tabs": [
+              {
+                "tab": "Documentation",
+                "icon": "square-library",
+                "groups": [
+                  {
+                    "group": "Get started",
+                    "icon": "play",
+                    "pages": ["index", "introduction", "quickstart"]
+                  },
+                  {
+                    "group": "Core concepts",
+                    "icon": "lightbulb",
+                    "pages": [
+                      "core/concepts/what-is-projgen",
+                      "core/concepts/templates-and-registry",
+                      "core/concepts/template-vs-template-engine"
+                    ]
+                  },
+                  {
+                    "group": "CLI commands",
+                    "icon": "square-terminal",
+                    "pages": [
+                      "core/cli/create",
+                      "core/cli/add",
+                      "core/cli/list",
+                      "core/cli/remove"
+                    ]
+                  },
+                  {
+                    "group": "Configuration & registry",
+                    "icon": "settings-2",
+                    "pages": [
+                      "core/configuration/registry",
+                      "core/configuration/template-locations"
+                    ]
+                  },
+                  {
+                    "group": "Development",
+                    "icon": "wrench",
+                    "pages": [
+                      "core/development/overview",
+                      "core/development/project-structure",
+                      "core/development/contributing"
+                    ]
+                  },
+                  {
+                    "group": "Releases",
+                    "icon": "history",
+                    "pages": ["core/changelog", "core/roadmap"]
+                  }
+                ]
+              },
+              {
+                "tab": "Template spec",
+                "icon": "square-terminal",
+                "groups": [
+                  {
+                    "group": "Overview",
+                    "icon": "sparkles",
+                    "expanded": true,
+                    "pages": [
+                      "core/template-spec/introduction",
+                      "core/template-spec/template-metadata"
+                    ]
+                  },
+                  {
+                    "group": "Variables",
+                    "icon": "list-checks",
+                    "pages": ["core/template-spec/variables"]
+                  },
+                  {
+                    "group": "Steps",
+                    "icon": "workflow",
+                    "pages": [
+                      "core/template-spec/steps/run",
+                      "core/template-spec/steps/write",
+                      "core/template-spec/steps/patch-text",
+                      "core/template-spec/steps/patch-json",
+                      "core/template-spec/steps/conditional-execution"
+                    ]
+                  }
+                ]
+              }
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
-        "groups": [
+        "product": "Template Engine",
+        "description": "The JSON-based template execution engine powering Projgen.",
+        "icon": "cpu",
+        "versions": [
           {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
+            "version": "v3.1",
+            "tag": "Latest",
+            "default": true,
+            "groups": [
+              {
+                "group": "Overview",
+                "icon": "sparkles",
+                "pages": [
+                  "template-engine/overview",
+                  "template-engine/architecture"
+                ]
+              },
+              {
+                "group": "Execution model",
+                "icon": "workflow",
+                "pages": [
+                  "template-engine/execution-flow",
+                  "template-engine/error-handling"
+                ]
+              },
+              {
+                "group": "Versioning & migration",
+                "icon": "git-branch",
+                "pages": [
+                  "template-engine/versioning",
+                  "template-engine/migration/v3.0-to-v3.1"
+                ]
+              }
             ]
           },
           {
-            "group": "Endpoint examples",
+            "version": "v3.0",
+            "tag": "Previous",
+            "groups": [
+              {
+                "group": "Overview",
+                "icon": "sparkles",
+                "pages": ["template-engine/v3.0/overview"]
+              },
+              {
+                "group": "Versioning & migration",
+                "icon": "git-branch",
+                "pages": ["template-engine/v3.0/compatibility"]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "product": "Official Templates",
+        "description": "Official Projgen templates maintained in the Projgen/templates registry.",
+        "icon": "layers",
+        "groups": [
+          {
+            "group": "Get started",
+            "icon": "play",
+            "pages": ["templates/overview", "templates/registry-usage"]
+          },
+          {
+            "group": "Templates",
+            "icon": "files",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "templates/sample-template",
+              "templates/node-ts-yargs-cli"
             ]
           }
         ]
@@ -75,52 +192,64 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "GitHub Core",
+          "href": "https://github.com/Projgen/core",
+          "icon": "github"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "GitHub Templates",
+          "href": "https://github.com/Projgen/templates",
+          "icon": "github"
+        },
+        {
+          "anchor": "NPM CLI",
+          "href": "https://www.npmjs.com/package/@projgen/cli",
+          "icon": "box"
         }
       ]
     }
   },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
   "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
+    "links": [],
     "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "type": "github",
+      "label": "Projgen/Core",
+      "href": "https://github.com/Projgen/core"
+    }
+  },
+  "logo": "/assets/logo/logo.jpeg",
+  "footer": {
+    "socials": {
+      "github": "https://github.com/Projgen"
+    }
+  },
+  "background": {
+    "decoration": "windows",
+    "color": {
+      "dark": "#00000f"
+    }
+  },
+  "integrations": {
+    "telemetry": {
+      "enabled": true
     }
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "grok",
+      "cursor",
+      "vscode",
+      "copy",
+      "mcp"
+    ]
   },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+  "icons": {
+    "library": "lucide"
+  },
+  "interaction": {
+    "drilldown": true
   }
 }
