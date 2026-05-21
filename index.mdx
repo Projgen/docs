@@ -1,0 +1,183 @@
+---
+title: "Welcome to Projgen"
+description: "Template-driven project scaffolding. Define a JSON template once, run it anywhere."
+---
+
+**Projgen** is a CLI tool for scaffolding new projects from declarative JSON templates. Instead of manually bootstrapping boilerplate every time, you define variables (user prompts) and steps (actions) in a single `.json` file — then let Projgen handle the rest: running shell commands, writing files, patching text or JSON configs, and cloning setups with a single command.
+
+Templates are portable, versionable, and composable. You can store them locally, share them via the [official templates registry](https://github.com/Projgen/templates), or maintain your own private registry. The core CLI is available globally via npm and requires no configuration to get started.
+
+```bash
+npm install -g @projgen/cli
+```
+
+---
+
+## The Projgen ecosystem
+
+Projgen is made up of three layers that work together.
+
+<Columns cols={3}>
+  <Card title="Projgen CLI" icon="terminal" href="/introduction">
+    The command-line interface. Install it globally and use `projgen create`,
+    `add`, `list`, and `remove` to run templates and manage your local registry.
+    Currently on **v3**.
+  </Card>
+  <Card title="Template Engine" icon="cpu" href="/template-engine/overview">
+    The internal engine that loads, validates, and executes template JSON. It
+    resolves variables, evaluates `when` conditions, and dispatches steps
+    through typed adapters. Currently on **v3.1**.
+  </Card>
+  <Card title="Official Templates" icon="layers" href="/templates/overview">
+    The [Projgen/templates](https://github.com/Projgen/templates) repository. A
+    curated registry of ready-to-use templates — from sample starters to full
+    TypeScript CLI setups.
+  </Card>
+</Columns>
+
+<Note>
+  The CLI and the Template Engine are versioned independently. The CLI is
+  currently **v3** and the Template Engine is **v3.1**. Your template's
+  `engineVersion` field declares which engine version it targets.
+</Note>
+
+---
+
+## How it works
+
+<Steps>
+  <Step title="Install the CLI">
+    Install globally with npm or run directly with npx — no config file required.
+
+    ```bash
+    # Install globally
+    npm install -g @projgen/cli
+
+    # Or run without installing
+    npx @projgen/cli create ./my-template.json
+    ```
+
+  </Step>
+
+  <Step title="Write (or grab) a template">
+    A template is a `.json` file with metadata, a `variables` array (user prompts), and a `steps` array (actions to run). Here is the minimal structure:
+
+    ```json
+    {
+      "$schema": "https://raw.githubusercontent.com/Projgen/core/refs/heads/master/template.schema.json",
+      "id": "my-template",
+      "name": "My Template",
+      "description": "A short description of what this template creates.",
+      "version": "1.0.0",
+      "engineVersion": "3.1",
+      "author": "Your Name",
+      "variables": [],
+      "steps": []
+    }
+    ```
+
+    Or use an [official template](/templates/overview) directly from the registry.
+
+  </Step>
+
+  <Step title="Run it">
+    Point `projgen create` at the file path, url or a registry alias. Projgen validates the template, prompts for any declared variables, then executes all steps in order.
+
+    ```bash
+    # From a local file
+    projgen create ./my-template.json
+
+    # From a url
+    projgen create https://raw.githubusercontent.com/Projgen/templates/refs/heads/main/templates/sample.json
+
+    # From a registry alias (after projgen add)
+    projgen create my-template
+
+    # Skip optional prompts (only required variables without defaults are asked)
+    projgen create my-template -y
+    ```
+
+  </Step>
+</Steps>
+
+---
+
+## What a template can do
+
+A template declares **variables** that are prompted before any work starts, and **steps** that consume those values.
+
+### Variables
+
+Four types of input are supported:
+
+| Type           | Description                | Key fields            |
+| -------------- | -------------------------- | --------------------- |
+| `string`       | Free-text input            | `required`, `default` |
+| `number`       | Numeric input              | `required`, `default` |
+| `boolean`      | True/false toggle          | `default`             |
+| `select`       | Single choice from a list  | `required`, `options` |
+| `multi-select` | Multible choices from list | `required`, `options` |
+
+Variables are referenced inside step fields using `{{variableName}}` — in paths, commands, content, and JSON values.
+
+### Steps
+
+Steps run in declaration order after all variables are collected. Any step can be guarded with a `when` condition array.
+
+<Columns cols={2}>
+  <Card title="run" icon="square-terminal" href="/core/template-spec/steps/run">
+    Execute a shell command. Supports `command`, `args[]`, and optional `cwd`.
+  </Card>
+  <Card title="write" icon="file-pen" href="/core/template-spec/steps/write">
+    Create or overwrite a file. Content can be inline or fetched from a `url`.
+  </Card>
+  <Card
+    title="patch-text"
+    icon="pencil"
+    href="/core/template-spec/steps/patch-text"
+  >
+    Surgically edit a text file: `replace`, `insert-after`, `insert-before`,
+    `append`, or `prepend`.
+  </Card>
+  <Card
+    title="patch-json"
+    icon="braces"
+    href="/core/template-spec/steps/patch-json"
+  >
+    Modify a JSON file at a `jsonPath` using `set`, `append`, or `remove`.
+  </Card>
+</Columns>
+
+---
+
+## Jump in
+
+<Columns cols={2}>
+  <Card title="Quickstart" icon="play" href="/quickstart" arrow="true">
+    Run your first template in under two minutes.
+  </Card>
+  <Card
+    title="Template spec"
+    icon="scroll-text"
+    href="/core/template-spec/introduction"
+    arrow="true"
+  >
+    Full reference for variables, steps, and conditions.
+  </Card>
+  <Card
+    title="Official templates"
+    icon="layers"
+    href="/templates/overview"
+    arrow="true"
+  >
+    Browse ready-made templates maintained by the Projgen team.
+  </Card>
+  <Card
+    title="GitHub"
+    icon="github"
+    href="https://github.com/Projgen/core"
+    arrow="true"
+  >
+    Source code, issues, and contributions.
+  </Card>
+</Columns>
