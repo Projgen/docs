@@ -1,0 +1,192 @@
+---
+title: "Introduction"
+description: "What Projgen is, the problems it solves, and how its layers fit together."
+---
+
+Every project has the same early chapters: create the folder, set up `package.json`, wire in TypeScript, add a linter, write boilerplate entry files. Doing this by hand is slow and inconsistent — copy-paste mistakes, forgotten config lines, slightly different layouts across repos. Projgen solves this by letting you capture that setup work once as a **JSON template** and replay it exactly, with user-supplied values, whenever you need it.
+
+A template is not a project skeleton (a zip of files you extract and edit). It is a **declarative program**: a list of typed prompts and a list of actions that run in order once those prompts are answered. The CLI reads the template, validates it against the [JSON schema](https://raw.githubusercontent.com/Projgen/core/refs/heads/master/template.schema.json), collects variable values interactively, then executes every step — creating files, running commands, patching configs. The result is a fully-set-up project, no manual cleanup required.
+
+---
+
+## The layers
+
+Projgen is three distinct layers. Understanding the separation makes it easier to know where to look for any given problem.
+
+<Steps>
+  <Step title="Projgen CLI (v3)">
+    The entry point for everything a user types. Commands (`create`, `add`,
+    `list`, `remove`) wire together the required use cases and adapters, then
+    hand off. No business logic lives here.
+  </Step>
+  <Step title="Registry Engine (internal)">
+    Handles the local registry: resolving aliases to template file paths,
+    persisting new entries (`projgen add`), and removing them (`projgen
+    remove`). When you run `projgen create my-alias`, this layer resolves that
+    alias to a concrete path before anything else runs.
+  </Step>
+  <Step title="Template Service (internal)">
+    Loads a template from the resolved file path and validates it against the
+    [JSON
+    schema](https://raw.githubusercontent.com/Projgen/core/refs/heads/master/template.schema.json).
+    Errors surface here before the engine ever runs.
+  </Step>
+  <Step title="Template Engine (v3.1, internal)">
+    The execution core. Given a validated template and resolved variable values,
+    it evaluates `when` conditions on each step and dispatches steps through
+    typed adapters — `run`, `write`, `patch-text`, `patch-json`.
+  </Step>
+</Steps>
+
+Templates are supplied from outside this chain — from your **local registry**, the [Projgen/templates](https://github.com/Projgen/templates) repository, any path on disk or an external URL.
+
+<Note>
+  The CLI and the Template Engine are **versioned independently**. The CLI is
+  currently **v3**; the Template Engine is **v3.1**. Your template's
+  `engineVersion` field declares which engine version it targets.
+</Note>
+
+### Module structure
+
+Internal modules (Template Engine, Template Service, and Registry Engine) all follow the same layered structure:
+
+- `application/` — use cases and orchestration
+- `domain/` — types and ports (interfaces for external dependencies)
+- `infrastructure/` — adapters that implement those ports (filesystem, process, HTTP, and other IO)
+
+This mirrors common ports-and-adapters / hexagonal architecture practice, where domain logic is isolated behind stable interfaces and infrastructure details live at the edges.[web:69]
+
+### CLI (`src/CLI`)
+
+The entry point for everything a user types. Each command (`create`, `add`, `list`, `remove`) imports its required use cases along with the concrete adapters those use cases need, then passes them in. The CLI layer itself contains no business logic — it only wires the pieces together and handles user-facing input/output.
+
+### Template Service (`src/template-service`)
+
+Higher-level template logic: loading a template from a file path or registry alias and validating it against the schema. If a template file is malformed or missing required fields, the error surfaces here before the engine ever runs.
+
+### Template Engine (`src/template-engine`)
+
+The execution core. Given a valid template, it prompts for variables, evaluates `when` conditions on each step and dispatches steps through typed adapters — no direct filesystem or process calls inside the engine itself. This makes it independently testable and separable from CLI concerns.
+
+### Registry Engine (`src/registry-engine`)
+
+Handles the local registry: resolving aliases to template paths, storing and removing templates. When you run `projgen add`, the registry engine persists the mapping; when you run `projgen create my-alias`, the registry engine resolves that alias to a file path before the template service takes over.
+
+### Template registries (external)
+
+A registry is just a JSON file with a `version` number and a `templates` array of `{ path, alias }` entries. The [Projgen/templates](https://github.com/Projgen/templates) repository is the official registry — its `registry.json` lists all official templates. You can link external registries to your local registry by adding the url to the `linkedRegistries` array. The [official registry](https://raw.githubusercontent.com/Projgen/templates/refs/heads/main/registry.json) is added by default.
+
+---
+
+## Templates are JSON, not skeletons
+
+This distinction matters for how you think about authoring.
+
+A **project skeleton** is a snapshot of files you copy and then search-replace for values. It is static — you get what you get, and conditional logic (e.g. "only add ESLint if the user wants it") requires forking or post-processing.
+
+A **Projgen template** is a program with two parts:
+
+- **`variables`** — a typed list of prompts shown to the user before anything runs. Each variable has a `name` (used as the interpolation key), a `message` (the prompt text), a `type`, and optional `required`/`default` fields. Variable values are substituted into step fields using `{{variableName}}` anywhere in a string.
+- **`steps`** — an list of actions executed after all variables are collected. Any step can carry a `when` array to make it conditional. Steps can create or overwrite files, run shell commands, or surgically modify existing text or JSON files.
+
+The schema enforces a strict shape — `additionalProperties: false` on every step type means invalid fields are rejected at validation time, not silently ignored.
+
+---
+
+## Template structure at a glance
+
+Every valid template must include all eight top-level required fields:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/Projgen/core/refs/heads/master/template.schema.json",
+  "id": "my-template",
+  "name": "My Template",
+  "description": "What this template creates.",
+  "version": "1.0.0",
+  "engineVersion": "3.1",
+  "author": "Your Name",
+  "variables": [...],
+  "steps": [...]
+}
+```
+
+| Field           | Type     | Required | Notes                                                                         |
+| --------------- | -------- | -------- | ----------------------------------------------------------------------------- |
+| `$schema`       | `string` | No       | Points to the JSON Schema for editor autocomplete and validation              |
+| `id`            | `string` | **Yes**  | Used as the filename and default alias in the local registry — must be unique |
+| `name`          | `string` | **Yes**  | Human-readable display name                                                   |
+| `description`   | `string` | **Yes**  | Short description of what the template scaffolds                              |
+| `version`       | `string` | **Yes**  | Semantic version of the template itself                                       |
+| `engineVersion` | `string` | **Yes**  | Target engine version (e.g. `"3.1"`)                                          |
+| `author`        | `string` | **Yes**  | Template author name                                                          |
+| `variables`     | `array`  | **Yes**  | List of variable definitions (can be empty `[]`)                              |
+| `steps`         | `array`  | **Yes**  | List of step definitions                                                      |
+
+### Variable types
+
+Five variable types are available. Each variable type has a strict, fixed set of allowed fields — using an unknown field will fail validation.
+Each type requires `name`, `message` and `type`
+
+| Type           | Produces                     | Additional required fields | Optional fields |
+| -------------- | ---------------------------- | -------------------------- | --------------- |
+| `string`       | Text input                   | `required`                 | `default`       |
+| `number`       | Numeric input                | `required`                 | `default`       |
+| `boolean`      | True/false toggle            |                            | `default`       |
+| `select`       | Single choice from a list    | `required`, `options`      | `default`       |
+| `multi-select` | Multiple choices from a list | `required`, `options`      |                 |
+
+`options` on both `select` and `multi-select` accepts either `string[]` or `number[]`.
+
+### Step types
+
+Four step types are available. All steps share optional common fields: `type`(step type), `name` (`string`), `description` (`string`), `when` (condition array), and `continueOnError` (`boolean`).
+
+| Type         | Additional required fields              | What it does                                                                                                                                      |
+| ------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `run`        | `command`                               | Executes a shell command. Optional: `args` (`string[]`), `cwd`, `verbosity`                                                                       |
+| `write`      | `path`                                  | Creates or overwrites a file. Either `content` or `url` must be set; if both, `url` wins                                                          |
+| `patch-text` | `path`, `operation`, `content` or `url` | Edits a text file. Operations: `replace`, `insert-after`, `insert-before`, `append`, `prepend`. `find` required for all except `append`/`prepend` |
+| `patch-json` | `path`, `operation`, `jsonPath`         | Edits a JSON file at a key path. Operations: `set`, `append`, `remove`. `value` required for `set`/`append`                                       |
+
+The `when` condition array is available on every step type. Each condition object requires `variable` (`string`), `operator` (one of `eq`, `neq`, `gt`, `lt`, `gte`, `lte`, `contains`, `notContains`, `isNull`, `isNotNull`, `matches`, `notMatches`), and `value`. All conditions in the array must pass for the step to run.
+
+<Tip>
+  See the [Template spec](/core/template-spec/introduction) section for the full
+  reference on each variable type, step type, and condition operator — including
+  examples and field-level details.
+</Tip>
+
+---
+
+## What's next
+
+<Columns cols={2}>
+  <Card title="Quickstart" icon="play" href="/quickstart" arrow="true">
+    Run your first template in under two minutes.
+  </Card>
+  <Card
+    title="CLI commands"
+    icon="terminal"
+    href="/core/cli/create"
+    arrow="true"
+  >
+    Full reference for `create`, `add`, `list`, and `remove`.
+  </Card>
+  <Card
+    title="Template spec"
+    icon="scroll-text"
+    href="/core/template-spec/introduction"
+    arrow="true"
+  >
+    Every variable type, step type, and condition operator documented.
+  </Card>
+  <Card
+    title="Official templates"
+    icon="layers"
+    href="/templates/overview"
+    arrow="true"
+  >
+    Browse ready-made templates from the Projgen team.
+  </Card>
+</Columns>
