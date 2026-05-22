@@ -8,7 +8,7 @@
     "light": "#7ddacf",
     "dark": "#7ddacf"
   },
-  "favicon": "/assets/logo/favicon.png",
+  "favicon": "/assets/logo/favicon.svg",
   "styling": {
     "codeblocks": {
       "theme": "material-theme-darker"
@@ -217,7 +217,10 @@
       "href": "https://github.com/Projgen/core"
     }
   },
-  "logo": "/assets/logo/logo.jpeg",
+  "logo": {
+    "dark": "/assets/logo/favicon.svg",
+    "light": "/assets/logo/favicon.svg"
+  },
   "footer": {
     "socials": {
       "github": "https://github.com/Projgen"
