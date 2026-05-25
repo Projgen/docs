@@ -1,0 +1,206 @@
+---
+title: "Quickstart"
+description: "Install Projgen and run your first template in under two minutes."
+---
+
+This guide walks you through installing the CLI, running the official `sample-template`, and understanding how variables and steps work in practice.
+
+---
+
+## Install the CLI
+
+Install Projgen globally so the `projgen` command is available everywhere:
+
+```bash
+npm install -g @projgen/cli
+```
+
+You can also run any template directly without a global install using `npx`:
+
+```bash
+npx @projgen/cli create ./my-template.json
+```
+
+<Note>
+  Projgen requires **Node.js >= 18**. Run `node -v` to check your version.
+</Note>
+
+---
+
+## Run your first template
+
+The official [Projgen/templates](https://github.com/Projgen/templates) repository contains ready-to-use templates. The simplest one is `sample-template` — it prompts for a name and echoes a greeting. That's it. It's intentionally minimal so you can see the full lifecycle without noise.
+
+<Steps>
+  <Step title="Run the sample template">
+    Point `projgen create` at the raw template URL:
+
+    ```bash
+    projgen create https://raw.githubusercontent.com/Projgen/templates/refs/heads/main/templates/sample.json
+    ```
+
+    Aliases `c` and `cr` work identically:
+
+    ```bash
+    projgen c https://raw.githubusercontent.com/Projgen/templates/refs/heads/main/templates/sample.json
+    ```
+
+  </Step>
+
+  <Step title="Allow remote template execution">
+    Because the template comes from an external URL, Projgen asks you to confirm before doing anything:
+
+    ```
+    ? The template source [...] is a remote URL.
+    Do you want to proceed with downloading the template? (y/N)
+    ````
+
+    Type `y` and press Enter to continue.
+
+    <Warning>
+      Only run templates from sources you trust. A template can execute shell commands and write files on your machine.
+    </Warning>
+
+  </Step>
+
+  <Step title="Answer the prompt">
+    Projgen validates the template, then prompts you for every declared variable **before any steps run**:
+
+    ```
+    ? What's your name? › _
+    ```
+
+    Type your name and press Enter.
+
+  </Step>
+
+  <Step title="Watch the step execute">
+    After all variables are collected, Projgen runs the steps in order. The sample template has a single `run` step:
+
+    ```
+    Hello Alice
+    ```
+
+  </Step>
+</Steps>
+
+---
+
+## What just happened
+
+Here is the complete source of the sample template so you can see exactly what ran:
+
+```json
+{
+  "id": "sample-template",
+  "name": "Sample Template",
+  "description": "This is a sample template for demonstration and testing purposes.",
+  "version": "3.0.0",
+  "engineVersion": "3.0",
+  "author": "Projgen",
+  "variables": [
+    {
+      "name": "name",
+      "type": "string",
+      "required": true,
+      "message": "What's your name?"
+    }
+  ],
+  "steps": [
+    {
+      "type": "run",
+      "command": "echo",
+      "args": ["Hello {{name}}"]
+    }
+  ]
+}
+```
+
+Two things to notice:
+
+- **`variables`** declares one `string` prompt. Because `required: true`, Projgen will always ask for it — `-y` cannot skip it (see below).
+- **`steps`** declares one `run` step. The `args` array contains `"Hello {{name}}"` — Projgen replaces `{{name}}` with whatever you typed before the command runs.
+
+<Tip>
+  `{{ variableName }}` interpolation works anywhere a string appears inside a
+  step — in `command`, `args`, `path`, `content`, `cwd`, `url`, or `value`. The
+  substitution happens at execution time, after all prompts are answered.
+</Tip>
+
+---
+
+## Add a template to your local registry
+
+Instead of passing a file path or URL every time, register the template under an alias:
+
+```bash
+projgen add https://raw.githubusercontent.com/Projgen/templates/refs/heads/main/templates/sample.json my-template
+```
+
+Now run it by alias from anywhere:
+
+```bash
+projgen c my-template
+```
+
+If you omit the alias, Projgen uses `template.id` as the alias (`sample-template` in this case). The registry will reject a `projgen add` call if either the alias or the `id` is already registered — templates are stored by `id` filename, so duplicates are not allowed.
+
+<Note>
+  Run `projgen list` (alias: `projgen ls`) at any time to see all registered
+  templates, the registry version, and any linked registries.
+</Note>
+
+---
+
+## Skipping prompts with `-y`
+
+Add `-y` to skip any variable prompt that is either **optional** (`required: false`) or has a **`default` value**. Projgen will use the default or leave the value empty without asking.
+
+```bash
+projgen create my-template -y
+```
+
+Variables that are `required: true` **with no default** are always prompted, even with `-y`. There is no way to suppress a required variable without a default — Projgen needs a value to proceed.
+
+| Variable config                  | Behaviour with `-y`                 |
+| -------------------------------- | ----------------------------------- |
+| `required: true`, no `default`   | Always prompted — cannot be skipped |
+| `required: true`, has `default`  | Skipped — default value used        |
+| `required: false`, no `default`  | Skipped — value is empty / null     |
+| `required: false`, has `default` | Skipped — default value used        |
+
+In the sample template, `name` is `required: true` with no default, so `-y` has no effect — you will still be asked for it.
+
+---
+
+## What's next
+
+<Columns cols={2}>
+  <Card title="Introduction" icon="book-open" href="/introduction" arrow="true">
+    Understand how the CLI, Template Engine, and registry fit together.
+  </Card>
+  <Card
+    title="CLI commands"
+    icon="terminal"
+    href="/core/cli/create"
+    arrow="true"
+  >
+    Full reference for `create`, `add`, `list`, and `remove`.
+  </Card>
+  <Card
+    title="Template spec"
+    icon="scroll-text"
+    href="/core/template-spec/introduction"
+    arrow="true"
+  >
+    All variable types, step types, and condition operators.
+  </Card>
+  <Card
+    title="Official templates"
+    icon="layers"
+    href="/templates/overview"
+    arrow="true"
+  >
+    Browse production-ready templates from the Projgen team.
+  </Card>
+</Columns>
