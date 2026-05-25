@@ -1,0 +1,87 @@
+---
+title: "What is Projgen?"
+description: "Projgen is a template-driven CLI that validates a JSON template, collects variable values, then executes steps in order to scaffold any project."
+---
+
+Projgen is a CLI tool that scaffolds new projects from declarative **JSON templates**. You define a template once — what to ask the user, and what actions to run — and Projgen handles the rest: running shell commands, writing files, and patching configs. The same template can be run as many times as needed, on any machine, with any set of answers.
+
+---
+
+## The execution model
+
+Every run follows the same three-phase pipeline, in strict order:
+
+<Steps>
+  <Step title="Validate">
+    Projgen loads the template file (from a local path or remote URL) and
+    validates it against the [JSON
+    schema](https://raw.githubusercontent.com/Projgen/core/refs/heads/master/template.schema.json).
+    If any required field is missing, a field has the wrong type, or an unknown
+    property appears (all step and variable definitions use
+    `additionalProperties: false`), execution stops before anything touches your
+    filesystem.
+  </Step>
+  <Step title="Prompt">
+    After validation passes, Projgen works through the `variables` array in
+    declaration order and prompts the user for each one. Steps do not start
+    until **all** variable values have been collected. This means no partial
+    state — either you have everything needed, or nothing runs.
+  </Step>
+  <Step title="Execute">
+    Steps run sequentially in the order they appear in the `steps` array. Each
+    step evaluates its `when` conditions (if any) against the collected variable
+    values, then either runs or is skipped. Steps can run shell commands
+    (`run`), create or overwrite files (`write`), edit text files
+    (`patch-text`), or surgically modify JSON files (`patch-json`) (useful for
+    config files).
+  </Step>
+</Steps>
+
+---
+
+## How Projgen differs from other project generators
+
+Most scaffolding tools are **one-off generators**: a CLI that asks a few questions and writes a snapshot of files to disk. Once that run is done, the generator's job is over. If you want to scaffold the same kind of project again next month — possibly on a different machine or with slightly different options — you run the generator again and hope it is still up to date but hasn't changed too much.
+
+Projgen is built around a different idea: **reusable, portable, registry-backed templates**.
+
+|                             | Typical generator                                                         | Projgen                                                                   |
+| --------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **Template format**         | Directory of files copied to disk, with find-and-replace for placeholders | Plain JSON — no programming required                                      |
+| **Distribution**            | Published npm package or Git repo with its own install                    | A single `.json` file — share by path, URL, or registry alias             |
+| **Registry**                | Not built in                                                              | Local registry maps aliases to template files; run by alias from anywhere |
+| **Conditional logic**       | Embedded in generator code                                                | Declarative `when` arrays on any step — no code needed                    |
+| **Patching existing files** | Usually not supported                                                     | `patch-text` and `patch-json` steps surgically edit existing files        |
+
+The key shift: a Projgen template is **data**, not code. Anyone who can read JSON can read, audit, and modify a template. There is nothing to install beyond the CLI itself.
+
+---
+
+## Templates are JSON programs, not file skeletons
+
+A common pattern in scaffolding is the **project skeleton**: a directory of files you copy into a new folder, then search-replace placeholder strings. Projgen does not work this way.
+
+A Projgen template is a **program with two arrays**:
+
+- **`variables`** — a list of typed prompts shown to the user before execution. Variable values are substituted into step fields at runtime using `{{variableName}}`.
+- **`steps`** — a list of actions executed in order. Steps are not static files; they are instructions that produce files, run processes, and modify configs using the collected variable values.
+
+This means templates can express logic that a file skeleton cannot: conditional steps, dynamic filenames, computed content, and multi-step sequences that depend on user choices.
+
+---
+
+## The registry
+
+Projgen includes a **local registry** — a persistent store of template aliases. Instead of passing a file path every time, you register a template once under an alias and reference it by name from any directory:
+
+```bash
+# Register once
+projgen add ./my-template.json my-template
+
+# Run from anywhere
+projgen create my-template
+```
+
+The registry maps aliases to template file paths and enforces uniqueness: no two entries can share an alias or a `template.id`. Templates are stored by `id` filename, so duplicate ids are rejected at `add` time.
+
+The [Projgen/templates](https://github.com/Projgen/templates) repository is an example of a shared registry: a `registry.json` file with a `version` and a `templates` array of `{ path, alias }` entries. You
